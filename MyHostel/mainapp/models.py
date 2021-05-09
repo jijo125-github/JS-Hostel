@@ -6,6 +6,10 @@ ROOM_STATUS_CHOICES = (
         ('reserved', 'Reserved'),
         ('vacant', 'Vacant')
     )
+PAYMENT_MODE_CHOICES = (
+    ('cash', 'Cash'),
+    ('online', 'Online')
+)
 
 # Create your models here.
 
@@ -45,7 +49,7 @@ class Room(models.Model):
     hostel      = models.ForeignKey(Hostel, on_delete=models.CASCADE, related_name='rooms')
     description = models.CharField(max_length=50)
     price       = models.PositiveIntegerField()
-    status      = models.CharField(max_length=8, choices=ROOM_STATUS_CHOICES)
+    status      = models.CharField(max_length=8, choices=ROOM_STATUS_CHOICES, default='vacant')
 
     def is_room_vacant(self):
         """ if room vacant, return True """
@@ -89,9 +93,10 @@ class Employee(models.Model):
 
 
 class Payment(models.Model):
-    payment_id  = models.AutoField(primary_key=True)
-    student     = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='payments')
-    booking     = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='payments')
+    payment_id      = models.AutoField(primary_key=True)
+    student         = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='payments')
+    booking         = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='payments')
+    payment_mode    = models.CharField(max_length=6, choices=PAYMENT_MODE_CHOICES, default='cash')
     
     @property
     def room_price(self):

@@ -1,10 +1,11 @@
 Create APIs:
 1. Admin should create hostel details and employee details.
-    - First create employee details
-    - A new student came in hostel 
+    - First create employee details (completed)
+    - A new student came in hostel (pending)
 
-2. Get all students details of a particular hostel
-3. Get particular hostel details
+2. Get all students details of a particular hostel (completed)
+3. Get particular hostel details (completed)
+4. List those rooms which are vacant.
 
 
 Issues:

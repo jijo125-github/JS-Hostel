@@ -3,7 +3,6 @@ from django.core.validators import RegexValidator
 from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
 
 
-
 # create your serializers here
 class CreateEmployeeSerializer(serializers.ModelSerializer):
     phone_no = serializers.RegexField("^0?[6-9]\d{9}$")
@@ -21,3 +20,22 @@ class CreateHostelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hostel
         fields = ('name', 'address', 'phone_no', 'manager_id')
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    hostel = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = ('__all__', 'hostel',)
+    
+    def get_hostel(self, instance):
+        pass
+
+
+class RoomSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Room
+        fields = '__all__'
+

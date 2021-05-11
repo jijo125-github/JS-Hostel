@@ -1,11 +1,13 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.core.exceptions import ObjectDoesNotExist
 from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
-from .serializers import CreateEmployeeSerializer, CreateHostelSerializer
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from .serializers import CreateEmployeeSerializer, CreateHostelSerializer, RoomSerializer
+from rest_framework.generics import CreateAPIView, RetrieveAPIView, ListAPIView
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
 
 
@@ -18,7 +20,6 @@ def createHostelView(request):
     try:
         if serialized_data.is_valid(raise_exception=True):
             hostel_serialized_data = serialized_data.validated_data
-            # print(hostel_serialized_data)
             hos_name = hostel_serialized_data.get('name')
             hos_address = hostel_serialized_data.get('address')
             hos_phone_no = hostel_serialized_data.get('phone_no')
@@ -27,14 +28,12 @@ def createHostelView(request):
             hosobj.save()
             
             data = {
-                'hostel_name' : hos_name,
-                'hostel_address' : hos_address,
-                'hostel_phone_no' : hos_phone_no,
-                'hostel_manager_id' : hos_manager_id
+                'savedToDatabase' : True
             }
     except:
         data = {
-            'error' : 'some error'
+            'savedToDatabase' : False,
+            'error' : 'some error has occured in saving the details'
         }
     return JsonResponse(data, status=status.HTTP_201_CREATED)
 
@@ -64,4 +63,51 @@ class GetHostelDetails(RetrieveAPIView):
     """ Get the particular hostel details """
     queryset = Hostel.objects.all()
     serializer_class = CreateHostelSerializer
-    
+
+
+@api_view(['GET'])
+def getStudentFromHostel(request, pk):
+    """ to get the names of students who have booked a hostel """
+    try:
+        rooms = Room.objects.filter(hostel=pk)
+        if rooms.count() == 0:
+            raise ObjectDoesNotExist
+        data = {
+            'message' : 'There are no students in this hostel'
+            }
+        student_names = list()
+        for room in rooms:
+            booking_qs = Booking.objects.filter(room=room)
+            if booking_qs:
+                for booking_obj in booking_qs:
+                    full_name = booking_obj.student.full_name
+                    student_names.append(full_name)           
+        if len(student_names) > 0:
+            data = {
+                'student_full_names_list' : student_names,
+                'message' : f'got {len(student_names)} students'
+            }
+        return JsonResponse(data, status=status.HTTP_200_OK)
+    except ObjectDoesNotExist:
+        data = {
+            'error_message' : 'hostel object does not exist. Please pass correct hostel obj request' 
+        }
+        return JsonResponse(data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RoomsPagination(LimitOffsetPagination):
+    """ paginating rooms """
+    default_limit = 2
+    max_limit = 10
+
+
+class GetVacantRooms(ListAPIView):
+    """ Api to get all vacant rooms available """
+    queryset = Room.objects.filter(status='vacant')
+    serializer_class = RoomSerializer
+    pagination_class = RoomsPagination
+
+
+class CreateStudentDetails(CreateAPIView):
+    """ Api to create student details """
+    pass

@@ -1,8 +1,5 @@
-from django.shortcuts import render
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
-from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
-from .serializers import CreateEmployeeSerializer, CreateHostelSerializer, RoomSerializer, StudentSerializer, BookingSerializer
 from rest_framework.generics import CreateAPIView, RetrieveAPIView, ListAPIView
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
@@ -10,6 +7,16 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
+from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
+
+from .serializers import (
+    CreateEmployeeSerializer, 
+    CreateHostelSerializer, 
+    GetBookingSerializer, 
+    RoomSerializer, 
+    StudentSerializer, 
+    BookingSerializer
+)
 
 
 # Create your api views here.
@@ -139,7 +146,8 @@ class DoBooking(APIView):
         "check_out_date": "2021-05-23"
     }
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
+        """ only allow to book if serialized data validated """
         serializer = BookingSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             booking_data = serializer.validated_data
@@ -158,3 +166,22 @@ class DoBooking(APIView):
                 })
             return Response(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get_object(self, id):
+        """ Get booking object by id """
+        try:
+            return Booking.objects.get(booking_id = id)
+        except ObjectDoesNotExist:
+            error_data = {
+                'failed' : True,
+                'error' : 'Object Does not exist'
+            }
+            raise ValidationError(error_data)
+
+   
+    def get(self, request, pk):
+        """ Get all booking details """
+        booking = self.get_object(pk)
+        serializer = GetBookingSerializer(booking)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+            

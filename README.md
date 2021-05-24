@@ -7,4 +7,4 @@ Building Rest APIs for Hostel Management System using Django Rest Framework.
 * [x] List out vacant room details
 * [x] Create Student details
 * [x] Do Booking (Handle booking data)
-* [ ] Get Booking details
+* [x] Get Booking details

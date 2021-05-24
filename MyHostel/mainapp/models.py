@@ -73,6 +73,11 @@ class Booking(models.Model):
         return f'{self.student}-{self.booking_id}'
     
     def save(self, *args, **kwargs):
+        """ 
+            overriding save method:- 
+            --> when a booking is done, change the related room status to reserved.
+            --> calculate no of nights from check in and check out date. 
+        """
         self.room.status = 'reserved'
         self.room.save()
         self.no_of_nights = (self.check_out_date - self.check_in_date).days
@@ -80,6 +85,7 @@ class Booking(models.Model):
 
 
 class Employee(models.Model):
+    """ Employee Details """
     employee_id     = models.AutoField(primary_key=True)
     first_name      = models.CharField(max_length=50)
     last_name       = models.CharField(max_length=50, blank=True, null=True)
@@ -99,6 +105,7 @@ class Employee(models.Model):
 
 
 class Payment(models.Model):
+    """ Payment Details """
     payment_id      = models.AutoField(primary_key=True)
     student         = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='payments')
     booking         = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='payments')
@@ -124,6 +131,7 @@ class Payment(models.Model):
 
 
 class Transcation(models.Model):
+    """ Transaction Details """
     transaction_id  = models.AutoField(primary_key=True)
     student         = models.ForeignKey(Student, on_delete=models.CASCADE)
     booking         = models.ForeignKey(Booking, on_delete=models.CASCADE)

@@ -16,5 +16,6 @@ urlpatterns = [
     path('getHostelDetails/<int:pk>/', GetHostelDetails.as_view(),name='Get_Particular_Hostel_Details'),
     path('getStudents/<int:pk>/',getStudentFromHostel, name='Get_Students_Name_From_Hostel'),
     path('createStudent/', CreateStudentDetails.as_view(),name='Create_Student'),
-    path('doBooking/', DoBooking.as_view(),name='Do_Booking')
+    path('doBooking/', DoBooking.as_view(),name='Do_Booking'),
+    path('getBookingDetails/<int:pk>/', DoBooking.as_view(), name='Get_Booking_Details')
 ]

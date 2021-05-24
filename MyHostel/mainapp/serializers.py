@@ -56,3 +56,18 @@ class BookingSerializer(serializers.ModelSerializer):
         if not room_vacant:
             raise ValidationError({'room-status' : 'Room is not vacant'})
         return data
+
+
+class GetBookingSerializer(serializers.ModelSerializer):
+    """ Get the booking details of a particular booking """
+    student = serializers.SlugRelatedField(read_only=True, slug_field='full_name')
+    room = serializers.SlugRelatedField(read_only=True, slug_field='description')
+    status = serializers.SerializerMethodField()
+
+    def get_status(self,obj):
+        return obj.room.status
+
+    class Meta:
+        model = Booking
+        fields = ('booking_id','student','room','status','booking_date','check_in_date','check_out_date','no_of_nights')
+    

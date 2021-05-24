@@ -71,6 +71,12 @@ class Booking(models.Model):
 
     def __str__(self):
         return f'{self.student}-{self.booking_id}'
+    
+    def save(self, *args, **kwargs):
+        self.room.status = 'reserved'
+        self.room.save()
+        self.no_of_nights = (self.check_out_date - self.check_in_date).days
+        super(Booking, self).save(*args, **kwargs)
 
 
 class Employee(models.Model):

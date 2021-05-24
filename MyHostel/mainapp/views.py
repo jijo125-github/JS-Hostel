@@ -2,8 +2,9 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
-from .serializers import CreateEmployeeSerializer, CreateHostelSerializer, RoomSerializer
+from .serializers import CreateEmployeeSerializer, CreateHostelSerializer, RoomSerializer, StudentSerializer, BookingSerializer
 from rest_framework.generics import CreateAPIView, RetrieveAPIView, ListAPIView
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -110,4 +111,50 @@ class GetVacantRooms(ListAPIView):
 
 class CreateStudentDetails(CreateAPIView):
     """ Api to create student details """
-    pass
+    serializer_class = StudentSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            if Student.objects.filter(first_name=first_name, last_name=last_name).exists():
+                raise ObjectDoesNotExist
+            else:
+                return super().create(request, *args, **kwargs)
+        except ObjectDoesNotExist:
+            data = {
+                "Failed": True,
+                "error" : "Student already exists"
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DoBooking(APIView):
+    """ Book a room """
+
+    dobookingDataFormat = {
+        "student": "1",
+        "room": "2",
+        "check_in_date": "2021-05-19",
+        "check_out_date": "2021-05-23"
+    }
+
+    def post(self, request, *args, **kwargs):
+        serializer = BookingSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            booking_data = serializer.validated_data
+            booking_obj = Booking(
+                student         = booking_data.get('student'),
+                room            = booking_data.get('room'),
+                check_in_date   = booking_data.get('check_in_date'),
+                check_out_date  = booking_data.get('check_out_date')
+            )
+            booking_obj.save()
+            response_data = serializer.data
+            response_data.update({
+                'created' : True,
+                'no_of_nights' : (booking_data.get('check_out_date') - booking_data.get('check_in_date')).days,
+                'room_status' : 'Reserved'
+                })
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

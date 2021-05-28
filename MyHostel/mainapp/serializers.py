@@ -54,7 +54,10 @@ class BookingSerializer(serializers.ModelSerializer):
         room_id = data['room'].room_id
         room_vacant = Room.objects.get(room_id = room_id).is_room_vacant()
         if not room_vacant:
-            raise ValidationError({'room-status' : 'Room is not vacant'})
+            raise ValidationError({
+                'room-status' : 'Room is not vacant',
+                'failed' : True
+                })
         return data
 
 

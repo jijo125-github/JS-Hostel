@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
 
 
@@ -26,7 +25,12 @@ class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = '__all__'
+        fields = ('first_name', 'last_name', 'address', 'phone_no')
+    
+    def validate_phone_no(self, value):
+        if Student.objects.filter(phone_no = value).exists():
+            raise serializers.ValidationError({"error":"This phone number already exists"})
+        return value
     
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -34,7 +38,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = '__all__'
-
+        
 
 class BookingSerializer(serializers.ModelSerializer):
     check_in_date = serializers.DateField()
@@ -50,11 +54,11 @@ class BookingSerializer(serializers.ModelSerializer):
                 is room vacant?
          """
         if data['check_in_date'] > data['check_out_date']:
-            raise ValidationError({"date-error" : "check_out_date should come after check_in_date."})
+            raise serializers.ValidationError({"date-error" : "check_out_date should come after check_in_date."})
         room_id = data['room'].room_id
         room_vacant = Room.objects.get(room_id = room_id).is_room_vacant()
         if not room_vacant:
-            raise ValidationError({
+            raise serializers.ValidationError({
                 'room-status' : 'Room is not vacant',
                 'failed' : True
                 })

@@ -96,11 +96,10 @@ def getStudentFromHostel(request, pk):
             }
         return JsonResponse(data, status=status.HTTP_200_OK)
     except ObjectDoesNotExist:
-        data = {
+        raise ValidationError({
             'error_message' : 'hostel object does not exist. Please pass correct hostel obj request' 
-        }
-        return JsonResponse(data, status=status.HTTP_400_BAD_REQUEST)
-
+        })
+   
 
 class RoomsPagination(LimitOffsetPagination):
     """ paginating rooms """
@@ -113,6 +112,15 @@ class GetVacantRooms(ListAPIView):
     queryset = Room.objects.filter(status='vacant')
     serializer_class = RoomSerializer
     pagination_class = RoomsPagination
+
+    def get_queryset(self):
+        """ Raise error message if no rooms are available """
+        if self.queryset.count() == 0:
+            raise ValidationError({
+                'room-count' : 0,
+                'error' : 'Sorry, all rooms are occupied. Please try later..'
+                })
+        return super().get_queryset()
 
 
 class CreateStudentDetails(CreateAPIView):

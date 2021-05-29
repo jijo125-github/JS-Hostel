@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from rest_framework.test import APITestCase
 from .models import Student, Booking, Employee, Room, Hostel
 
@@ -6,14 +7,14 @@ from .models import Student, Booking, Employee, Room, Hostel
 class StudentTestCase(APITestCase):
     """ 
         TestCase to check all student logics
-        --> create Student, restrict student copies
+        --> create Student, restrict student copies, restrict duplicate phone_numbers
     """
     def setUp(self):
         self.student_attrs = {
             "first_name" : "Johns",
             "last_name" : "JS",
             "address" : "Bhavnath-1",
-            "phone_no" : "8849091164"
+            "phone_no" : "8849091264"
             }
         fname = self.student_attrs['first_name']
         lname = self.student_attrs['last_name']
@@ -26,6 +27,7 @@ class StudentTestCase(APITestCase):
         """ test post request to create a student works or not """
         new_student_attr = self.student_attrs.copy()
         new_student_attr['first_name'] = 'Jijo'
+        new_student_attr['phone_no'] = '9426481564'
         response = self.client.post('/api/v1/createStudent/', new_student_attr)
         if response.status_code != 201:
             print(response.data)
@@ -44,3 +46,46 @@ class StudentTestCase(APITestCase):
         self.assertNotEqual(response.status_code, 201)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.currentCount, latest_count)
+    
+    def test_phoneno_duplicate(self):
+        """ test if phone number already exists, it doesn't allow """
+        duplicate_student_attr = self.student_attrs.copy()
+        duplicate_student_attr.update(first_name='Test', last_name='ABC')
+        response = self.client.post('/api/v1/createStudent/', duplicate_student_attr)
+        if response.status_code != 201:
+            error_message = response.data.get('phone_no').get('error')
+            self.assertIn('This phone number already exists', error_message)
+            self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.currentCount, Student.objects.count())
+        
+
+class BookingTestCase(APITestCase):
+    """
+        TestCase to check all booking logics
+    """
+    def setUp(self):
+        self.booking_attrs = {
+            "student": "1",
+            "room": "1",
+            "check_in_date": "2021-05-19",
+            "check_out_date": "2021-05-23"
+            }
+        Hostel.objects.create(name='Pragati Mens Hostel',
+         address='JV Colony, Rajiv gandhi Nagar, Gachibowli, Hyderabad, Telangana 500032',
+         phone_no='09922134512',
+         manager_id='1'
+         )
+        tHostel = Hostel.objects.first()
+        Room.objects.create(hostel=tHostel, description='King Sized Bedroom', price=3000, status='vacant')
+        Student.objects.create(first_name='Test', last_name='123', address='qwerty', phone_no = 9999912345)
+        self.current_count = Booking.objects.count()
+
+    def test_create_booking(self):
+        response = self.client.post('/api/v1/booking/', self.booking_attrs)
+        if response.status_code != 201:
+            print('Response data', response.data)
+            self.assertRaises(ValidationError)
+        self.assertEqual(Booking.objects.count(), self.current_count + 1)
+        self.assertEqual(response.data['room_status'], 'Reserved')
+        self.assertGreaterEqual(response.data['check_out_date'], response.data['check_in_date'], 
+        msg='Check_out_date should be greater than check_in_date')

@@ -1,15 +1,19 @@
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
+from django_filters import FilterSet
+from django_filters import rest_framework as filters
 from rest_framework.generics import CreateAPIView, RetrieveAPIView, ListAPIView
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
 from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
 from .serializers import (
-    CreateEmployeeSerializer, 
+    CreateEmployeeSerializer,
+    EmployeeSerializer, 
     CreateHostelSerializer, 
     GetBookingSerializer, 
     RoomSerializer, 
@@ -19,6 +23,12 @@ from .serializers import (
 
 
 # Create your api views here.
+
+class ModelsPagination(LimitOffsetPagination):
+    """ paginating models """
+    default_limit = 2
+    max_limit = 10
+
 
 @api_view(['POST'])
 def createHostelView(request):
@@ -33,7 +43,6 @@ def createHostelView(request):
             hos_manager_id = hostel_serialized_data.get('manager_id')
             hosobj = Hostel(name=hos_name, address=hos_address, phone_no=hos_phone_no, manager_id=hos_manager_id)
             hosobj.save()
-            
             data = {
                 'savedToDatabase' : True
             }
@@ -64,6 +73,20 @@ class CreateEmployee(CreateAPIView):
                 "error" : "Employee already exists"
             } 
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetEmployee(RetrieveAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+
+
+class ListEmployee(ListAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    pagination_class = ModelsPagination
+    filter_backends = (SearchFilter, OrderingFilter)
+    ordering_fields = ('first_name',)
+    search_fields = ('last_name',)
 
 
 class GetHostelDetails(RetrieveAPIView):
@@ -99,19 +122,40 @@ def getStudentFromHostel(request, pk):
         raise ValidationError({
             'error_message' : 'hostel object does not exist. Please pass correct hostel obj request' 
         })
+
+
+@api_view(['POST'])
+def create_room(request):
+    """ view to create Room """
+
+    createRoomDataFormat = {
+        "hostel": "1",
+        "description": "King Sized Bedroom",
+        "price": "3000",
+        "status": "vacant"
+    }
+
+    serializer = RoomSerializer(data=request.data)
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+        response_data = serializer.data.copy()
+        extra_data = {
+            'created' : True,
+            'hostel_name' : Hostel.objects.get(hostel_branch_id=response_data.get('hostel')).name
+        }
+        response_data.pop('hostel')
+        response_data.update(extra_data)
+        return Response(response_data, status=status.HTTP_201_CREATED)
+    return Response({
+        'failed' : True
+        }, status=status.HTTP_400_BAD_REQUEST)
+
    
-
-class RoomsPagination(LimitOffsetPagination):
-    """ paginating rooms """
-    default_limit = 2
-    max_limit = 10
-
-
 class GetVacantRooms(ListAPIView):
     """ Api to get all vacant rooms available """
     queryset = Room.objects.filter(status='vacant')
     serializer_class = RoomSerializer
-    pagination_class = RoomsPagination
+    pagination_class = ModelsPagination
 
     def get_queryset(self):
         """ Raise error message if no rooms are available """
@@ -191,4 +235,17 @@ class DoBooking(APIView):
         booking = self.get_object()
         serializer = GetBookingSerializer(booking)
         return Response(serializer.data, status = status.HTTP_200_OK)
+
+
+class PaymentView(APIView):
+    """ payment details """
+
+    def post(self, request, *args, **kwargs):
+        """ create the payment details """
+        
+
+    def get(self, request, *args, **kwargs):
+        """ get particular payment details """
+        pass
+    
      

@@ -38,6 +38,7 @@ class Hostel(models.Model):
     address            = models.TextField(max_length=100)
     phone_no           = models.CharField(max_length=11, validators=[PHONE_NO_REGEX])
     manager_id         = models.PositiveIntegerField(validators=[MaxValueValidator(99999)])
+    room_limit         = models.IntegerField(validators=[MaxValueValidator(100)])
 
     def __str__(self):
         return f'Hostel-{self.name}'

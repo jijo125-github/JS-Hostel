@@ -73,7 +73,8 @@ class BookingTestCase(APITestCase):
         Hostel.objects.create(name='Pragati Mens Hostel',
          address='JV Colony, Rajiv gandhi Nagar, Gachibowli, Hyderabad, Telangana 500032',
          phone_no='09922134512',
-         manager_id='1'
+         manager_id='1',
+         room_limit='50'
          )
         tHostel = Hostel.objects.first()
         Room.objects.create(hostel=tHostel, description='King Sized Bedroom', price=3000, status='vacant')

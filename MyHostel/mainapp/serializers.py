@@ -11,6 +11,11 @@ class CreateEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ('employee_id', 'first_name', 'last_name', 'address', 'phone_no', 'email_address', 'hostel')
+    
+    def validate_phone_no(self, value):
+        if Employee.objects.filter(phone_no=value).exists():
+            raise serializers.ValidationError('Phone number already exists')
+        return value
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -31,6 +36,11 @@ class CreateHostelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hostel
         fields = ('name', 'address', 'phone_no', 'manager_id')
+    
+    def validate_phone_no(self, value):
+        if Hostel.objects.filter(phone_no=value).exists():
+            raise serializers.ValidationError('Phone number already exists')
+        return value
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -102,7 +112,6 @@ class GetBookingSerializer(serializers.ModelSerializer):
         """ get room price """
         return obj.room.price
 
-
     class Meta:
         model = Booking
         fields = ('booking_id','student','room','roomprice','status','booking_date','check_in_date','check_out_date','no_of_nights')
@@ -110,8 +119,21 @@ class GetBookingSerializer(serializers.ModelSerializer):
 
 class CreatePaymentSerializer(serializers.ModelSerializer):
     """ while doing payment serialize payment details """
-
+    
     class Meta:
         model = Payment
-        fields = ('payment_id', 'student', 'booking', 'payment_mode')
+        fields = ('student', 'booking', 'payment_mode')
+
+    def validate_booking(self, value):
+        """ validate if payment details exist for this booking"""
+        if Payment.objects.filter(booking=value).exists():
+            raise serializers.ValidationError({
+                "error" : "Payment was already done for this booking"
+            })
     
+    def validate_student(self, value):
+        """ deny payment if already done by student """
+        if Payment.objects.filter(student=value).exists():
+            raise serializers.ValidationError({
+                "error" : "Student have already done payment"
+            })

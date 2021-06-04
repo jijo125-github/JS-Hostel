@@ -107,10 +107,11 @@ class Employee(models.Model):
 
 class Payment(models.Model):
     """ Payment Details """
-    payment_id      = models.AutoField(primary_key=True)
-    student         = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='payments')
-    booking         = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='payments')
-    payment_mode    = models.CharField(max_length=6, choices=PAYMENT_MODE_CHOICES, default='cash')
+    payment_id       = models.AutoField(primary_key=True)
+    student          = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='payments')
+    booking          = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='payments')
+    payment_mode     = models.CharField(max_length=6, choices=PAYMENT_MODE_CHOICES, default='cash')
+    payment_datetime = models.DateTimeField(auto_now_add=True) 
     
     @property
     def room_price(self):

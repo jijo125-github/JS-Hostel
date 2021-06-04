@@ -1,12 +1,10 @@
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
-from django_filters import FilterSet
-from django_filters import rest_framework as filters
 from rest_framework.generics import CreateAPIView, RetrieveAPIView, ListAPIView
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
@@ -18,7 +16,8 @@ from .serializers import (
     GetBookingSerializer, 
     RoomSerializer, 
     StudentSerializer, 
-    BookingSerializer
+    BookingSerializer,
+    CreatePaymentSerializer
 )
 
 
@@ -33,26 +32,43 @@ class ModelsPagination(LimitOffsetPagination):
 @api_view(['POST'])
 def createHostelView(request):
     """ Admin create details of Hostel in this view """
-    serialized_data = CreateHostelSerializer(data=request.data)
+
+    createHostelDataFormat = {
+        "name": "Test ABC",
+        "address": "Bhavnath Bangalore",
+        "phone_no": "9991231231",
+        "manager_id": "1",
+        "room_limit" : "40"
+    }
+    
     try:
+        serialized_data = CreateHostelSerializer(data=request.data)
         if serialized_data.is_valid(raise_exception=True):
             hostel_serialized_data = serialized_data.validated_data
             hos_name = hostel_serialized_data.get('name')
             hos_address = hostel_serialized_data.get('address')
             hos_phone_no = hostel_serialized_data.get('phone_no')
             hos_manager_id = hostel_serialized_data.get('manager_id')
-            hosobj = Hostel(name=hos_name, address=hos_address, phone_no=hos_phone_no, manager_id=hos_manager_id)
+            hos_room_limit = hostel_serialized_data.get('room_limit')
+            hosobj = Hostel(
+                name=hos_name, 
+                address=hos_address, 
+                phone_no=hos_phone_no, 
+                manager_id=hos_manager_id, 
+                room_limit=hos_room_limit
+                )
             hosobj.save()
             data = {
                 'savedToDatabase' : True
             }
+            return JsonResponse(data, status=status.HTTP_201_CREATED)
     except:
-        data = {
+        errordata = {
             'savedToDatabase' : False,
             'error' : 'some error has occured in saving the details'
         }
-    return JsonResponse(data, status=status.HTTP_201_CREATED)
-
+        return JsonResponse(errordata, status=status.HTTP_400_BAD_REQUEST)
+    
 
 class CreateEmployee(CreateAPIView):
     """ Admin shall create the main employee details """
@@ -84,9 +100,18 @@ class ListEmployee(ListAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     pagination_class = ModelsPagination
-    filter_backends = (SearchFilter, OrderingFilter)
+    filter_backends = (OrderingFilter,)
     ordering_fields = ('first_name',)
-    search_fields = ('last_name',)
+
+    def get_queryset(self):
+        """ get the list of employees from a hostel """
+        hostel_name = self.request.query_params.get('hostel', None)
+        if hostel_name is None:
+            return super().get_queryset()
+        queryset = Employee.objects.filter(hostel__name=hostel_name)
+        if queryset.exists():
+            return queryset
+        raise ValidationError('Hostel name is incorrect or hostel doesnt exist with name')
 
 
 class GetHostelDetails(RetrieveAPIView):
@@ -164,28 +189,34 @@ class GetVacantRooms(ListAPIView):
                 'room-count' : 0,
                 'error' : 'Sorry, all rooms are occupied. Please try later..'
                 })
-        return super().get_queryset()
 
+        """ filter rooms under a specific price limit """
+        room_price_limit = self.request.query_params.get('price_limit', None)
+        if not room_price_limit:
+            return super().get_queryset()
+        queryset = Room.objects.filter(status='vacant').filter(price__lte=room_price_limit)
+        if queryset.exists():
+            return queryset
+        raise ValidationError(f'There are no vacant rooms below {room_price_limit}')
+        
+        
 
 class CreateStudentDetails(CreateAPIView):
     """ Api to create student details """
     serializer_class = StudentSerializer
 
     def create(self, request, *args, **kwargs):
-        try:
-            first_name = request.data.get('first_name')
-            last_name = request.data.get('last_name')
-            if Student.objects.filter(first_name=first_name, last_name=last_name).exists():
-                raise ObjectDoesNotExist
-            else:
-                return super().create(request, *args, **kwargs)
-        except ObjectDoesNotExist:
-            data = {
-                "Failed": True,
-                "error" : "Student already exists"
-            }
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
-
+        """ do not create if student exists """
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        if Student.objects.filter(first_name=first_name, last_name=last_name).exists():
+            errordata = {
+            "Failed": True,
+            "error" : "Student already exists"
+        }
+            raise ValidationError(errordata, code=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
+          
 
 class DoBooking(APIView):
     """ Book a room """
@@ -238,14 +269,19 @@ class DoBooking(APIView):
 
 
 class PaymentView(APIView):
-    """ payment details """
+    """ payment details not working yet"""
+    
+    payment_format = {
+        "student" : "4",
+        "booking" : "20",
+        "payment_mode" : "online"
+    }
 
     def post(self, request, *args, **kwargs):
-        """ create the payment details """
-        
-
-    def get(self, request, *args, **kwargs):
-        """ get particular payment details """
-        pass
-    
-     
+        """ create the payment details """ 
+        serializer = CreatePaymentSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+ 

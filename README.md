@@ -1,4 +1,4 @@
-Building Rest APIs for Hostel Management System using Django Rest Framework. 
+**Building Rest APIs for Hostel Management System using Django Rest Framework.**
 
 * [x] Create Employee Details for managing Hostel.
 * [x] Create Hostel details.
@@ -8,3 +8,11 @@ Building Rest APIs for Hostel Management System using Django Rest Framework.
 * [x] Create Student details
 * [x] Do Booking (Handle booking data)
 * [x] Get Booking details
+* [ ] Handle payments
+___
+
+Before running this project, run these commands,
+
+- pip install -r requirements.txt
+- python manage.py migrate
+- python manage.py runserver

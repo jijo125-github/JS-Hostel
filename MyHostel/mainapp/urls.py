@@ -9,7 +9,8 @@ from .views import (
         create_room, 
         GetVacantRooms, 
         CreateStudentDetails, 
-        DoBooking
+        DoBooking,
+        PaymentView
     )
 
 urlpatterns = [
@@ -23,5 +24,6 @@ urlpatterns = [
     path('createStudent/', CreateStudentDetails.as_view(),name='Create_Student'),
     path('getStudents/<int:pk>/',getStudentFromHostel, name='Get_Students_Name_From_Hostel'),
     path('booking/', DoBooking.as_view(),name='Do_Booking'),
-    path('booking/<int:pk>/', DoBooking.as_view(), name='Get_Booking_Details')
+    path('booking/<int:pk>/', DoBooking.as_view(), name='Get_Booking_Details'),
+    path('payment/', PaymentView.as_view(),name='Do_Payment'),
 ]

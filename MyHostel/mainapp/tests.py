@@ -92,3 +92,34 @@ class BookingTestCase(APITestCase):
         self.assertEqual(response.data['room_status'], 'Reserved')
         self.assertGreaterEqual(response.data['check_out_date'], response.data['check_in_date'], 
         msg='Check_out_date should be greater than check_in_date')
+
+
+class HostelTestCase(APITestCase):
+    """
+        TestCase to check all hostel logics
+        --> only unique hostel names allowed
+    """
+    def setUp(self):
+        self.hostel_attrs = {
+            "name": "Pragati Mens Hostel",
+            "address": "Bhavnath Bangalore",
+            "phone_no": "9991231231",
+            "manager_id": "1",
+            "room_limit" : "40"
+            }
+        Hostel.objects.create(name='Pragati Mens Hostel',
+         address='JV Colony, Rajiv gandhi Nagar, Gachibowli, Hyderabad, Telangana 500032',
+         phone_no='09922134512',
+         manager_id='1',
+         room_limit='50'
+         )
+        self.currentCount = Hostel.objects.count()
+    
+    def test_duplicate_fields(self):
+        """ test if hostelname already exists, deny creation"""
+        response = self.client.post('/api/v1/createHostel/', self.hostel_attrs)
+        if response.status_code != 201:
+            self.assertRaises(ValidationError)
+        self.assertEqual(response.status_code, 400)
+        self.assertNotEqual(self.currentCount, self.currentCount + 1)
+    

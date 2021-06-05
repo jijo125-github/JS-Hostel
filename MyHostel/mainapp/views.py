@@ -8,7 +8,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
-from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
+from .models import Student, Employee, Hostel, Payment, Room, Booking
 from .serializers import (
     CreateEmployeeSerializer,
     EmployeeSerializer, 
@@ -42,33 +42,15 @@ def createHostelView(request):
         "room_limit" : "40"
     }
     
-    try:
-        serialized_data = CreateHostelSerializer(data=request.data)
-        if serialized_data.is_valid(raise_exception=True):
-            hostel_serialized_data = serialized_data.validated_data
-            hos_name = hostel_serialized_data.get('name')
-            hos_address = hostel_serialized_data.get('address')
-            hos_phone_no = hostel_serialized_data.get('phone_no')
-            hos_manager_id = hostel_serialized_data.get('manager_id')
-            hos_room_limit = hostel_serialized_data.get('room_limit')
-            hosobj = Hostel(
-                name=hos_name, 
-                address=hos_address, 
-                phone_no=hos_phone_no, 
-                manager_id=hos_manager_id, 
-                room_limit=hos_room_limit
-                )
-            hosobj.save()
-            data = {
-                'savedToDatabase' : True
+    serializer = CreateHostelSerializer(data=request.data)
+    if serializer.is_valid(raise_exception=True):
+        hostel_serialized_data = serializer.validated_data
+        hostel_serialized_data.save()
+        data = {
+            'hostelCreated' : True,
+            'savedToDatabase' : True
             }
-            return JsonResponse(data, status=status.HTTP_201_CREATED)
-    except:
-        errordata = {
-            'savedToDatabase' : False,
-            'error' : 'some error has occured in saving the details'
-        }
-        return JsonResponse(errordata, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse(data, status=status.HTTP_201_CREATED)
     
 
 class CreateEmployee(CreateAPIView):

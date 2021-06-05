@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.fields import ReadOnlyField
 from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
 
 
@@ -60,8 +59,15 @@ class CreateHostelSerializer(serializers.ModelSerializer):
             )
     
     def validate_phone_no(self, value):
+        """ validate unique phone number exists """
         if Hostel.objects.filter(phone_no=value).exists():
             raise serializers.ValidationError('Phone number already exists')
+        return value
+    
+    def validate_name(self, value):
+        """ hostel name should be unique """
+        if Hostel.objects.filter(name=value).exists():
+            raise serializers.ValidationError('Hostel name already exists. Please keep some other name')
         return value
 
 

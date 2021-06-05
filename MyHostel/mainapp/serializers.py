@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.fields import ReadOnlyField
 from .models import Student, Employee, Hostel, Payment, Transcation, Room, Booking
 
 
@@ -10,7 +11,15 @@ class CreateEmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Employee
-        fields = ('employee_id', 'first_name', 'last_name', 'address', 'phone_no', 'email_address', 'hostel')
+        fields = (
+            'employee_id', 
+            'first_name', 
+            'last_name', 
+            'address', 
+            'phone_no', 
+            'email_address', 
+            'hostel'
+            )
     
     def validate_phone_no(self, value):
         if Employee.objects.filter(phone_no=value).exists():
@@ -26,7 +35,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Employee
-        fields = ('employee_id', 'full_name', 'address', 'phone_no', 'email_address', 'hostel')
+        fields = (
+            'employee_id', 
+            'full_name', 
+            'address', 
+            'phone_no', 
+            'email_address', 
+            'hostel'
+            )
 
 
 class CreateHostelSerializer(serializers.ModelSerializer):
@@ -35,7 +51,13 @@ class CreateHostelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Hostel
-        fields = ('name', 'address', 'phone_no', 'manager_id')
+        fields = (
+            'name', 
+            'address', 
+            'phone_no', 
+            'manager_id', 
+            'room_limit'
+            )
     
     def validate_phone_no(self, value):
         if Hostel.objects.filter(phone_no=value).exists():
@@ -48,7 +70,12 @@ class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ('first_name', 'last_name', 'address', 'phone_no')
+        fields = (
+            'first_name', 
+            'last_name', 
+            'address', 
+            'phone_no'
+            )
     
     def validate_phone_no(self, value):
         if Student.objects.filter(phone_no = value).exists():
@@ -78,7 +105,12 @@ class BookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ('student', 'room', 'check_in_date', 'check_out_date')
+        fields = (
+            'student', 
+            'room', 
+            'check_in_date', 
+            'check_out_date'
+            )
 
     def validate(self, data):
         """ validate: 
@@ -114,7 +146,17 @@ class GetBookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ('booking_id','student','room','roomprice','status','booking_date','check_in_date','check_out_date','no_of_nights')
+        fields = (
+            'booking_id',
+            'student',
+            'room',
+            'roomprice',
+            'status',
+            'booking_date',
+            'check_in_date',
+            'check_out_date',
+            'no_of_nights'
+            )
 
 
 class CreatePaymentSerializer(serializers.ModelSerializer):
@@ -122,7 +164,11 @@ class CreatePaymentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Payment
-        fields = ('student', 'booking', 'payment_mode')
+        fields = (
+            'student', 
+            'booking', 
+            'payment_mode'
+            )
 
     def validate_booking(self, value):
         """ validate if payment details exist for this booking"""
@@ -130,6 +176,7 @@ class CreatePaymentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "error" : "Payment was already done for this booking"
             })
+        return value
     
     def validate_student(self, value):
         """ deny payment if already done by student """
@@ -137,3 +184,38 @@ class CreatePaymentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "error" : "Student have already done payment"
             })
+        return value
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    """ serializers the payment details when displaying """
+    student = serializers.SlugRelatedField(read_only=True, slug_field='full_name')
+    booking_date = serializers.SlugRelatedField(read_only=True, source='booking', slug_field='booking_date')
+    check_in_date = serializers.SlugRelatedField(read_only=True, source='booking', slug_field='check_in_date')
+    check_out_date = serializers.SlugRelatedField(read_only=True, source='booking', slug_field='check_out_date')
+    payment_datetime = serializers.DateTimeField(read_only=True, format="%Y-%m-%d")
+    room = serializers.SerializerMethodField()
+    room_price = serializers.ReadOnlyField()
+    total_payments = serializers.ReadOnlyField()
+    no_of_nights = serializers.ReadOnlyField()
+    
+
+    class Meta:
+        model = Payment
+        fields = (
+            'payment_id',
+            'student', 
+            'booking_date',
+            'check_in_date',
+            'check_out_date', 
+            'room', 
+            'room_price',
+            'no_of_nights', 
+            'payment_mode', 
+            'payment_datetime', 
+            'total_payments'
+            )
+    
+    def get_room(self, obj):
+        """ get room description """
+        return obj.booking.room.description

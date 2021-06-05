@@ -8,11 +8,12 @@
 * [x] Create Student details
 * [x] Do Booking (Handle booking data)
 * [x] Get Booking details
-* [ ] Handle payments
+* [x] Handle payments
 ___
 
 Before running this project, run these commands,
 
 - pip install -r requirements.txt
+- cd MyHostel (switch to MyHostel directory)
 - python manage.py migrate
 - python manage.py runserver

@@ -7,7 +7,9 @@ from .models import Student, Booking, Employee, Room, Hostel
 class StudentTestCase(APITestCase):
     """ 
         TestCase to check all student logics
-        --> create Student, restrict student copies, restrict duplicate phone_numbers
+        --> create Student, 
+        --> restrict student copies, 
+        --> restrict duplicate phone_numbers
     """
     def setUp(self):
         self.student_attrs = {

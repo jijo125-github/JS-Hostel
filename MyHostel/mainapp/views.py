@@ -17,7 +17,8 @@ from .serializers import (
     RoomSerializer, 
     StudentSerializer, 
     BookingSerializer,
-    CreatePaymentSerializer
+    CreatePaymentSerializer,
+    PaymentSerializer
 )
 
 
@@ -200,7 +201,6 @@ class GetVacantRooms(ListAPIView):
         raise ValidationError(f'There are no vacant rooms below {room_price_limit}')
         
         
-
 class CreateStudentDetails(CreateAPIView):
     """ Api to create student details """
     serializer_class = StudentSerializer
@@ -269,7 +269,7 @@ class DoBooking(APIView):
 
 
 class PaymentView(APIView):
-    """ payment details not working yet"""
+    """ payment details"""
     
     payment_format = {
         "student" : "4",
@@ -284,4 +284,21 @@ class PaymentView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
- 
+    
+    def get_object(self):
+        """ Get payment object by id """
+        try:
+            id = self.kwargs.get('pk')
+            return Payment.objects.get(payment_id = id)
+        except ObjectDoesNotExist:
+            error_data = {
+                'failed' : True,
+                'error' : 'Object Does not exist'
+            }
+            raise ValidationError(error_data)
+    
+    def get(self, request, *args, **kwargs):
+        """ get the payment details """
+        payment = self.get_object()
+        serializer = PaymentSerializer(payment)
+        return Response(serializer.data, status = status.HTTP_200_OK)

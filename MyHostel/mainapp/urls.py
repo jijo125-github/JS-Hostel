@@ -26,4 +26,5 @@ urlpatterns = [
     path('booking/', DoBooking.as_view(),name='Do_Booking'),
     path('booking/<int:pk>/', DoBooking.as_view(), name='Get_Booking_Details'),
     path('payment/', PaymentView.as_view(),name='Do_Payment'),
+    path('payment/<int:pk>/', PaymentView.as_view(), name='Get_Payment_Details')
 ]

@@ -3,9 +3,10 @@
 * [x] Create Employee Details for managing Hostel.
 * [x] Create Hostel details.
 * [x] Get specific hostel details.
-* [x] Get all student details from a particular hostel.
+* [x] Create room details
 * [x] List out vacant room details
 * [x] Create Student details
+* [x] Get all student details from a particular hostel.
 * [x] Do Booking (Handle booking data)
 * [x] Get Booking details
 * [x] Handle payments

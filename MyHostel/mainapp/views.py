@@ -231,11 +231,21 @@ class DoBooking(APIView):
             return Response(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def get_object(self):
-        """ Get booking object by id """
+    def get_queryset(self):
+        """ Get booking queryset by id """
         try:
-            id = self.kwargs.get('pk')
-            return Booking.objects.get(booking_id = id)
+            bookings_qs = Booking.objects.all()
+            id = self.kwargs.get('pk', None)
+            """ return all bookings if no pk passed """
+            if id is None:
+                return bookings_qs    
+            """ return the booking object if valid pk is present else raise error"""    
+            booking_qs = bookings_qs.filter(booking_id = id)
+            if booking_qs.exists() and booking_qs.count() > 1:
+                raise ValidationError('Duplicate ids exist. Please look into it')
+            if not booking_qs.exists():
+                raise ObjectDoesNotExist
+            return booking_qs
         except ObjectDoesNotExist:
             error_data = {
                 'failed' : True,
@@ -245,8 +255,12 @@ class DoBooking(APIView):
 
     def get(self, request, *args, **kwargs):
         """ Get all booking details """
-        booking = self.get_object()
-        serializer = GetBookingSerializer(booking)
+        booking_qs = self.get_queryset()
+        if booking_qs.count() > 1:
+            room_price_limit = self.request.query_params.get('price_limit', None)
+            if room_price_limit:
+                booking_qs = booking_qs.filter(room__price__lte = int(room_price_limit))
+        serializer = GetBookingSerializer(booking_qs, many=True)      
         return Response(serializer.data, status = status.HTTP_200_OK)
 
 

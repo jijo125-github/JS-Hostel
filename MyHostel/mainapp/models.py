@@ -83,6 +83,9 @@ class Booking(models.Model):
         self.room.save()
         self.no_of_nights = (self.check_out_date - self.check_in_date).days
         super(Booking, self).save(*args, **kwargs)
+    
+    class Meta:
+        ordering = ['-booking_id']
 
 
 class Employee(models.Model):

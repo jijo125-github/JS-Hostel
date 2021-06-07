@@ -262,6 +262,32 @@ class DoBooking(APIView):
                 booking_qs = booking_qs.filter(room__price__lte = int(room_price_limit))
         serializer = GetBookingSerializer(booking_qs, many=True)      
         return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def put(self, request, *args, **kwargs):
+        """ update booking details if any typo error """
+        try:
+            booking_id = self.kwargs.get('pk', None)
+            if booking_id is None:
+                raise ValidationError('empty parameter passed. Invalid')
+            updated_booking_data = request.data
+            booking_instance = Booking.objects.get(booking_id=booking_id)
+            serializer = BookingSerializer(instance=booking_instance, data=updated_booking_data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            response_data = serializer.data 
+            response_data.update({
+                'updated' : True,
+                'no_of_nights' : (serializer.validated_data.get('check_out_date') - serializer.validated_data.get('check_in_date')).days,
+                'room_status' : 'Reserved'
+                })
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except ObjectDoesNotExist:
+            raise ValidationError({
+                'failed' : True,
+                'error' : 'Object Does not exist'
+                }, code=status.status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentView(APIView):
@@ -281,11 +307,21 @@ class PaymentView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def get_object(self):
-        """ Get payment object by id """
+    def get_queryset(self):
+        """ Get paying queryset by id """
         try:
-            id = self.kwargs.get('pk')
-            return Payment.objects.get(payment_id = id)
+            payment_qs = Payment.objects.all()
+            id = self.kwargs.get('pk', None)
+            """ return all payments done if no pk passed """
+            if id is None:
+                return payment_qs    
+            """ return the payment object if valid pk is present else raise error"""    
+            payment_qs = payment_qs.filter(payment_id = id)
+            if payment_qs.exists() and payment_qs.count() > 1:
+                raise ValidationError('Duplicate ids exist. Please look into it')
+            if not payment_qs.exists():
+                raise ObjectDoesNotExist
+            return payment_qs
         except ObjectDoesNotExist:
             error_data = {
                 'failed' : True,
@@ -295,6 +331,6 @@ class PaymentView(APIView):
     
     def get(self, request, *args, **kwargs):
         """ get the payment details """
-        payment = self.get_object()
-        serializer = PaymentSerializer(payment)
+        payment = self.get_queryset()
+        serializer = PaymentSerializer(payment, many=True)
         return Response(serializer.data, status = status.HTTP_200_OK)

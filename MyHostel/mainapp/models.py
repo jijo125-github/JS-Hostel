@@ -29,7 +29,10 @@ class Student(models.Model):
 
     def __str__(self):
         return self.full_name
-
+    
+    class Meta:
+        ordering = ['-student_id']
+        
 
 class Hostel(models.Model):
     """ Hostel Branch Details """
@@ -42,6 +45,9 @@ class Hostel(models.Model):
 
     def __str__(self):
         return f'Hostel-{self.name}'
+    
+    class Meta:
+        ordering = ['-hostel_branch_id']
 
 
 class Room(models.Model):
@@ -58,6 +64,9 @@ class Room(models.Model):
             
     def __str__(self):
         return f'Room number-{self.room_id}'
+    
+    class Meta:
+        ordering = ['-room_id']
 
 
 class Booking(models.Model):
@@ -106,6 +115,9 @@ class Employee(models.Model):
 
     def __str__(self):
         return self.full_name
+    
+    class Meta:
+        ordering = ['-employee_id']
 
 
 class Payment(models.Model):
@@ -133,6 +145,9 @@ class Payment(models.Model):
     
     def __str__(self):
         return f'{self.student}-{self.payment_id}'
+    
+    class Meta:
+        ordering = ['-payment_id']
 
 
 class Transcation(models.Model):
@@ -145,4 +160,7 @@ class Transcation(models.Model):
 
     def __str__(self):
         return f'{self.student}-{self.transaction_id}'
+    
+    class Meta:
+        ordering = ['-transaction_id']
     

@@ -298,6 +298,7 @@ class PaymentView(APIView):
         "booking" : "20",
         "payment_mode" : "online"
     }
+    PAYMENTMODES = ('cash', 'online')
 
     def post(self, request, *args, **kwargs):
         """ create the payment details """ 
@@ -331,6 +332,13 @@ class PaymentView(APIView):
     
     def get(self, request, *args, **kwargs):
         """ get the payment details """
-        payment = self.get_queryset()
-        serializer = PaymentSerializer(payment, many=True)
+        payment_qs = self.get_queryset()
+        if payment_qs.count() > 1:
+            payment_mode = self.request.query_params.get('payment_mode', None)
+            """ get payment details with respect to payment mode """
+            if payment_mode:
+                if payment_mode.lower() not in self.PAYMENTMODES:
+                    raise ValidationError('Invalid payment mode passed')
+                payment_qs = payment_qs.filter(payment_mode__iexact=payment_mode)            
+        serializer = PaymentSerializer(payment_qs, many=True)
         return Response(serializer.data, status = status.HTTP_200_OK)
